@@ -1,0 +1,653 @@
+================================================================================
+                        BÁO CÁO ĐỒ ÁN MÔN HỌC
+                    ỨNG DỤNG QUẢN LÝ SINH VIÊN FUS-SMoGPT
+================================================================================
+
+MỤC LỤC
+--------
+1. Mục tiêu và chức năng sản phẩm
+2. Công nghệ sử dụng
+3. Kiến trúc ứng dụng
+4. Thiết kế lớp (Class Design) - OOP
+5. Thuật toán chính
+6. Thiết kế giao diện
+7. Giải thích code chi tiết
+8. Xử lý ngoại lệ (Exception Handling)
+9. Luồng hoạt động (Flow)
+10. Hướng dẫn sử dụng
+11. AI hỗ trợ
+
+================================================================================
+1. MỤC TIÊU VÀ CHỨC NĂNG SẢN PHẨM
+================================================================================
+
+1.1. Mục tiêu:
+   - Xây dựng ứng dụng desktop quản lý sinh viên với giao diện hiện đại
+   - Áp dụng các kỹ thuật lập trình hướng đối tượng (OOP) 
+   - Hệ thống phân quyền đăng nhập (Admin / Sinh viên)
+   - Lưu trữ và quản lý dữ liệu sinh viên
+
+1.2. Chức năng chính:
+   a) Đăng nhập:
+      - Admin đăng nhập với username = "admin", mật khẩu = "123"
+      - Sinh viên đăng nhập với username = MSSV, mật khẩu = "1"
+   
+   b) Quản lý sinh viên (chỉ Admin):
+      - Xem danh sách tất cả sinh viên
+      - Thêm sinh viên mới
+      - Sửa thông tin sinh viên
+      - Xóa sinh viên
+      - Tìm kiếm sinh viên theo tên, MSSV, ngành, khóa
+   
+   c) Xem thông tin (Sinh viên):
+      - Sinh viên chỉ xem được thông tin cá nhân của mình
+
+   d) Tự động xếp loại học lực dựa trên GPA hệ 4:
+      - 0.0 → dưới 1.0: Kém
+      - 1.0 → dưới 2.0: Yếu
+      - 2.0 → dưới 2.5: Trung Bình
+      - 2.5 → dưới 3.5: Khá
+      - 3.5 → dưới 4.0: Giỏi
+      - 4.0: Xuất Sắc
+
+================================================================================
+2. CÔNG NGHỆ SỬ DỤNG
+================================================================================
+
+- Ngôn ngữ: C# (.NET 10)
+- Nền tảng giao diện: WPF (Windows Presentation Foundation) 
+  → Không sử dụng WinForm
+- Kiến trúc: MVVM (Model-View-ViewModel)
+- Lưu trữ dữ liệu: JSON file (students.json)
+- IDE: Visual Studio Code
+- AI hỗ trợ: Antigravity AI (Google DeepMind)
+
+================================================================================
+3. KIẾN TRÚC ỨNG DỤNG (MVVM)
+================================================================================
+
+Ứng dụng được thiết kế theo mô hình MVVM (Model-View-ViewModel):
+
+┌──────────────────────────────────────────────────┐
+│                   VIEW (XAML)                     │
+│  LoginWindow.xaml  │  MainWindow.xaml             │
+│  StudentFormDialog.xaml                           │
+│         ↑ Data Binding  ↓ Commands                │
+├──────────────────────────────────────────────────┤
+│               VIEWMODEL (C#)                      │
+│  LoginViewModel  │  MainViewModel                 │
+│  StudentFormViewModel  │  BaseViewModel           │
+│         ↑ Method Calls  ↓ Data                    │
+├──────────────────────────────────────────────────┤
+│                 MODEL (C#)                        │
+│  Person (Abstract)  │  Student  │  Admin          │
+│  IUser (Interface)  │  Enums                      │
+├──────────────────────────────────────────────────┤
+│               SERVICES (C#)                       │
+│  IDataService  →  JsonDataService                 │
+│  IAuthService  →  AuthService                     │
+├──────────────────────────────────────────────────┤
+│              EXCEPTIONS (C#)                      │
+│  StudentNotFoundException                         │
+│  DuplicateStudentException                        │
+│  InvalidGpaException                              │
+└──────────────────────────────────────────────────┘
+
+Giải thích:
+- View: Giao diện XAML, không chứa business logic
+- ViewModel: "Bộ não" của giao diện, xử lý logic hiển thị
+- Model: Dữ liệu và quy tắc nghiệp vụ
+- Services: Tầng dịch vụ (đọc/ghi file, xác thực)
+- Exceptions: Các ngoại lệ tùy chỉnh
+
+================================================================================
+4. THIẾT KẾ LỚP (CLASS DESIGN) - KỸ THUẬT OOP
+================================================================================
+
+4.1. Interface - IUser (Models/IUser.cs)
+-----
+Interface định nghĩa hợp đồng cho tất cả người dùng:
+
+    public interface IUser
+    {
+        string Username { get; set; }
+        string Password { get; set; }
+        UserRole Role { get; }
+        bool HasPermission(string action);
+        string GetDisplayInfo();
+    }
+
+Mục đích: Đảm bảo mọi người dùng (Admin, Student) đều phải implement
+các method này → loose coupling, dễ mở rộng.
+
+4.2. Abstract Class - Person (Models/Person.cs)
+-----
+Lớp trừu tượng - không thể tạo instance trực tiếp:
+
+    public abstract class Person : IUser
+    {
+        // Fields (private) - đóng gói dữ liệu
+        private string _name;
+        private string _id;
+        
+        // Properties - truy cập có kiểm soát
+        public string Name { get; set; }  // Có validation
+        public string Id { get; set; }    // Có validation
+        
+        // Abstract method - BẮT BUỘC lớp con override
+        public abstract string GetDisplayInfo();
+        
+        // Virtual method - lớp con CÓ THỂ override
+        public virtual bool HasPermission(string action) => false;
+    }
+
+Kỹ thuật sử dụng:
+- Abstract class: Person không thể new Person()
+- Fields (private): _name, _id - đóng gói
+- Properties: Name, Id - truy cập có validation
+- Abstract method: GetDisplayInfo() - đa hình bắt buộc
+- Virtual method: HasPermission() - đa hình tùy chọn
+- Interface implementation: IUser
+
+4.3. Kế thừa - Student : Person (Models/Student.cs)
+-----
+    public class Student : Person
+    {
+        // Thêm properties riêng
+        public string Mssv { get; set; }
+        public string NganhHoc { get; set; }
+        public string KhoaHoc { get; set; }
+        public double Gpa { get; set; }       // Validation: 0-4
+        public HocLuc XepLoaiHocLuc { get; }  // Computed property
+        
+        // ĐA HÌNH: Override abstract method
+        public override string GetDisplayInfo() 
+            => $"Sinh viên: {Name}\nMSSV: {Mssv}...";
+        
+        // ĐA HÌNH: Override virtual method
+        public override bool HasPermission(string action)
+            => action == "viewSelf";  // Chỉ có quyền xem bản thân
+    }
+
+4.4. Kế thừa - Admin : Person (Models/Admin.cs)
+-----
+    public class Admin : Person
+    {
+        // ĐA HÌNH: Override khác Student
+        public override string GetDisplayInfo()
+            => "Quản trị viên...";
+        
+        // ĐA HÌNH: Admin có TẤT CẢ quyền
+        public override bool HasPermission(string action)
+            => true;  // Toàn quyền
+    }
+
+So sánh đa hình (Polymorphism):
+- Student.HasPermission("delete") → false (không có quyền)
+- Admin.HasPermission("delete") → true (có quyền)
+→ Cùng một method, hai lớp con cho kết quả khác nhau = ĐA HÌNH
+
+4.5. Sơ đồ kế thừa:
+-----
+    IUser (Interface)
+      ↑ implements
+    Person (Abstract class)
+      ↑ kế thừa          ↑ kế thừa
+    Student              Admin
+
+    IDataService (Interface)
+      ↑ implements
+    JsonDataService
+
+    IAuthService (Interface)
+      ↑ implements
+    AuthService
+
+================================================================================
+5. THUẬT TOÁN CHÍNH
+================================================================================
+
+5.1. Thuật toán xếp loại học lực (GPA Classification)
+-----
+Input: Điểm GPA (double, 0.0 - 4.0)
+Output: Xếp loại học lực (HocLuc enum)
+
+Lưu đồ:
+    START
+      ↓
+    Nhận giá trị GPA
+      ↓
+    GPA == 4.0? → CÓ → Xuất Sắc → END
+      ↓ KHÔNG
+    GPA >= 3.5? → CÓ → Giỏi → END
+      ↓ KHÔNG
+    GPA >= 2.5? → CÓ → Khá → END
+      ↓ KHÔNG
+    GPA >= 2.0? → CÓ → Trung Bình → END
+      ↓ KHÔNG
+    GPA >= 1.0? → CÓ → Yếu → END
+      ↓ KHÔNG
+    Kém → END
+
+Code (C# switch expression):
+    return _gpa switch
+    {
+        4.0 => HocLuc.XuatSac,
+        >= 3.5 => HocLuc.Gioi,
+        >= 2.5 => HocLuc.Kha,
+        >= 2.0 => HocLuc.TrungBinh,
+        >= 1.0 => HocLuc.Yeu,
+        _ => HocLuc.Kem
+    };
+
+Độ phức tạp: O(1) - constant time vì sử dụng switch expression
+
+5.2. Thuật toán xác thực đăng nhập (Authentication)
+-----
+Input: username (string), password (string)
+Output: IUser object hoặc null
+
+Lưu đồ:
+    START
+      ↓
+    Nhận username, password
+      ↓
+    Username rỗng? → CÓ → return null → END
+      ↓ KHÔNG
+    username == "admin" VÀ password == "123"?
+      ↓ CÓ → return Admin object → END
+      ↓ KHÔNG
+    Duyệt danh sách sinh viên:
+      Tìm sinh viên có MSSV == username VÀ password khớp?
+      ↓ CÓ → return Student object → END
+      ↓ KHÔNG TÌM THẤY
+    return null (đăng nhập thất bại) → END
+
+Code:
+    public IUser? Authenticate(string username, string password)
+    {
+        // Bước 1: Kiểm tra Admin
+        if (username == "admin" && password == "123")
+            return new Admin("Quản trị viên", "admin", "123");
+        
+        // Bước 2: Tìm trong danh sách sinh viên
+        foreach (var student in students)
+        {
+            if (student.Mssv == username && student.Password == password)
+                return student;
+        }
+        
+        return null; // Thất bại
+    }
+
+Độ phức tạp: O(n) - linear search qua n sinh viên
+
+5.3. Thuật toán tìm kiếm sinh viên (Fuzzy Search)
+-----
+Input: keyword (string)
+Output: List<Student> phù hợp
+
+Thuật toán: Tìm kiếm mờ trên nhiều trường
+- So khớp không phân biệt hoa/thường (case-insensitive)
+- Tìm trên: Tên, MSSV, Ngành học, Khóa học, Học lực
+
+Code (sử dụng LINQ):
+    return students.Where(s =>
+        s.Name.ToLower().Contains(searchTerm) ||
+        s.Mssv.ToLower().Contains(searchTerm) ||
+        s.NganhHoc.ToLower().Contains(searchTerm) ||
+        s.KhoaHoc.ToLower().Contains(searchTerm) ||
+        s.HocLucDisplay.ToLower().Contains(searchTerm)
+    ).ToList();
+
+Độ phức tạp: O(n * m) với n = số sinh viên, m = độ dài chuỗi tìm kiếm
+
+5.4. Thuật toán CRUD (Create, Read, Update, Delete)
+-----
+a) Create (Thêm sinh viên):
+   - Validate dữ liệu đầu vào
+   - Kiểm tra trùng MSSV → DuplicateStudentException
+   - Thêm vào List và lưu file JSON
+
+b) Read (Đọc):
+   - Đọc file JSON → Deserialize thành List<Student>
+   - Linear search theo MSSV → O(n)
+
+c) Update (Cập nhật):
+   - Tìm index của sinh viên cần sửa → O(n)
+   - Thay thế object tại index đó
+   - Lưu lại file JSON
+
+d) Delete (Xóa):
+   - Tìm sinh viên theo MSSV → O(n)
+   - Remove khỏi List
+   - Lưu lại file JSON
+
+================================================================================
+6. THIẾT KẾ GIAO DIỆN
+================================================================================
+
+6.1. Màn hình đăng nhập (LoginWindow)
+-----
+- Giao diện tối (dark theme) với hiệu ứng gradient
+- Logo và tên ứng dụng "FUS-SMoGPT" ở trên cùng
+- Hai ô nhập: Tên đăng nhập và Mật khẩu
+- Nút Đăng nhập với gradient xanh tím
+- Hộp hướng dẫn đăng nhập ở dưới
+- Thông báo lỗi hiển thị khi sai tài khoản
+- Cửa sổ không viền, có thể kéo di chuyển
+
+6.2. Màn hình chính - Admin (MainWindow)
+-----
+Bố cục 3 phần:
+a) Header bar:
+   - Gradient xanh tím sang xanh dương
+   - Logo + tên app bên trái
+   - Thông báo chào mừng ở giữa
+   - Nút Đăng xuất + window controls bên phải
+
+b) Nội dung chính (2 cột):
+   Cột trái (rộng hơn):
+   - Thanh công cụ: Ô tìm kiếm + 4 nút (Thêm, Sửa, Xóa, Làm mới)
+   - Bảng DataGrid hiển thị danh sách sinh viên
+   - Các cột: MSSV, Họ Tên, Ngành Học, Khóa, GPA, Học Lực
+   
+   Cột phải (panel chi tiết):
+   - Avatar tròn gradient với chữ cái đầu tên
+   - Thông tin chi tiết sinh viên đang chọn
+   - Badge màu hiển thị xếp loại học lực
+
+c) Status bar:
+   - Thông báo trạng thái bên trái
+   - Phiên bản app bên phải
+
+6.3. Màn hình chính - Sinh viên
+-----
+- Giống Admin nhưng ẩn thanh công cụ (nút CRUD)
+- Chỉ hiển thị 1 dòng dữ liệu (bản thân)
+- Panel chi tiết tự động hiển thị
+
+6.4. Dialog thêm/sửa sinh viên (StudentFormDialog)
+-----
+- Cửa sổ modal overlay
+- 5 trường nhập liệu:
+  + Họ và tên (TextBox)
+  + Mã số sinh viên (TextBox, readonly khi sửa)
+  + Ngành học (ComboBox dropdown)
+  + Khóa học (ComboBox dropdown)  
+  + GPA (TextBox với validation)
+- Preview xếp loại học lực realtime khi nhập GPA
+- Thông báo lỗi validation
+- 2 nút: Hủy và Lưu
+
+6.5. Color Scheme (Dark Theme):
+-----
+- Background chính: #0F0F1A (xanh đen rất tối)
+- Card background: #1A1A2E (xanh tím tối)
+- Input background: #2D2D4A (tím tối)
+- Primary: #4E54C8 → #00D2FF (gradient xanh tím → xanh dương)
+- Text chính: #FFFFFF (trắng)
+- Text phụ: #B8B8CC (xám nhạt)
+- Border: #3D3D5C (tím xám)
+- Danger: #FF4444 (đỏ)
+- Success: #00C851 (xanh lá)
+
+================================================================================
+7. GIẢI THÍCH CODE CHI TIẾT
+================================================================================
+
+7.1. BaseViewModel - Nền tảng MVVM
+-----
+File: ViewModels/BaseViewModel.cs
+
+Implements INotifyPropertyChanged - giao diện WPF cần interface này
+để tự động cập nhật khi dữ liệu thay đổi.
+
+    protected bool SetProperty<T>(ref T field, T value, 
+        [CallerMemberName] string? propertyName = null)
+    {
+        if (Equals(field, value)) return false;  // Không thay đổi → bỏ qua
+        field = value;                            // Gán giá trị mới
+        OnPropertyChanged(propertyName);          // Thông báo UI cập nhật
+        return true;
+    }
+
+Giải thích:
+- Generic method <T>: hoạt động với mọi kiểu dữ liệu
+- ref T field: truyền tham chiếu đến backing field
+- [CallerMemberName]: tự động lấy tên property gọi method
+- Equals check: tránh cập nhật UI không cần thiết
+
+7.2. RelayCommand - Command Pattern
+-----
+File: ViewModels/RelayCommand.cs
+
+Cho phép bind button click từ XAML vào method trong ViewModel:
+
+    XAML: <Button Command="{Binding LoginCommand}"/>
+    ViewModel: LoginCommand = new RelayCommand(ExecuteLogin);
+
+Gồm 2 phần:
+- Execute: action được thực thi khi click
+- CanExecute: điều kiện để button enabled/disabled
+
+7.3. JsonDataService - Đọc/Ghi JSON
+-----
+File: Services/JsonDataService.cs
+
+Sử dụng System.Text.Json để serialize/deserialize:
+- LoadData(): Đọc students.json → List<Student>
+- SaveChanges(): List<Student> → ghi ra students.json
+
+Exception handling:
+- JsonException: khi file JSON bị hỏng format
+- IOException: khi không thể đọc/ghi file
+- FileNotFoundException: khi file chưa tồn tại → tạo data mẫu
+
+7.4. Data Binding trong XAML
+-----
+WPF Data Binding kết nối ViewModel ↔ View tự động:
+
+    <!-- TextBox bind đến property Username trong ViewModel -->
+    <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
+    
+    <!-- Button bind đến LoginCommand -->
+    <Button Command="{Binding LoginCommand}"/>
+    
+    <!-- DataGrid bind đến danh sách Students -->
+    <DataGrid ItemsSource="{Binding Students}"/>
+
+UpdateSourceTrigger=PropertyChanged: cập nhật ngay khi gõ (không đợi focus out)
+
+7.5. GPA Computed Property
+-----
+File: Models/Student.cs
+
+Property XepLoaiHocLuc là computed (chỉ có getter, không có setter).
+Giá trị được tính tự động từ GPA mỗi khi truy cập:
+
+    [JsonIgnore]  // Không lưu vào JSON (tính lại mỗi lần)
+    public HocLuc XepLoaiHocLuc
+    {
+        get => _gpa switch
+        {
+            4.0 => HocLuc.XuatSac,
+            >= 3.5 => HocLuc.Gioi,
+            // ...
+        };
+    }
+
+[JsonIgnore]: Thuộc tính này không serialize vào JSON vì được tính từ GPA.
+
+================================================================================
+8. XỬ LÝ NGOẠI LỆ (EXCEPTION HANDLING)
+================================================================================
+
+8.1. Custom Exceptions (3 lớp):
+
+a) StudentNotFoundException:
+   - Khi: Tìm sinh viên bằng MSSV nhưng không có
+   - Nơi dùng: GetStudentByMssv(), DeleteStudent(), UpdateStudent()
+   - Xử lý: Hiển thị MessageBox thông báo
+
+b) DuplicateStudentException:
+   - Khi: Thêm sinh viên với MSSV đã tồn tại
+   - Nơi dùng: AddStudent()
+   - Xử lý: Hiển thị warning trong form dialog
+
+c) InvalidGpaException:
+   - Khi: GPA nhập vào ngoài khoảng 0-4
+   - Nơi dùng: Student.Gpa setter, StudentFormViewModel
+   - Xử lý: Hiển thị lỗi trong form
+
+8.2. Exception Handling Patterns:
+
+a) Try-Catch trong ViewModel:
+    private void ExecuteLogin(object? parameter)
+    {
+        try
+        {
+            IUser? user = _authService.Authenticate(Username, Password);
+            if (user != null) LoginSuccessful?.Invoke(user);
+            else ErrorMessage = "Sai tên đăng nhập...";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Đã xảy ra lỗi: {ex.Message}";
+        }
+    }
+
+b) Try-Catch trong Service:
+    private void LoadData()
+    {
+        try { /* đọc file */ }
+        catch (JsonException ex) { /* file bị hỏng → tạo data mẫu */ }
+        catch (IOException ex) { /* không đọc được → list rỗng */ }
+    }
+
+c) Re-throw Pattern:
+    catch (DuplicateStudentException)
+    {
+        throw;  // Ném lại cho caller xử lý
+    }
+
+================================================================================
+9. LUỒNG HOẠT ĐỘNG (APPLICATION FLOW)
+================================================================================
+
+9.1. Luồng khởi động:
+    App.xaml.cs → Startup
+      ↓
+    Tạo JsonDataService (đọc students.json)
+      ↓
+    Tạo AuthService (inject DataService)
+      ↓
+    Tạo LoginViewModel (inject AuthService)
+      ↓
+    Hiển thị LoginWindow
+
+9.2. Luồng đăng nhập Admin:
+    Nhập "admin" / "123"
+      ↓
+    LoginCommand.Execute()
+      ↓
+    AuthService.Authenticate("admin", "123")
+      ↓
+    Trả về Admin object
+      ↓
+    LoginSuccessful event → MainWindow mở
+      ↓
+    MainViewModel.CurrentUser = Admin
+      ↓
+    LoadStudents() → hiển thị TẤT CẢ sinh viên
+      ↓
+    IsAdmin = true → hiện nút CRUD
+
+9.3. Luồng đăng nhập Sinh viên:
+    Nhập "SE180001" / "1"
+      ↓
+    AuthService.Authenticate("SE180001", "1")
+      ↓
+    Tìm thấy Student SE180001
+      ↓
+    MainWindow mở
+      ↓
+    LoadStudents() → chỉ hiển thị BẢN THÂN
+      ↓
+    IsAdmin = false → ẨN nút CRUD
+
+9.4. Luồng thêm sinh viên:
+    Admin click "➕ Thêm"
+      ↓
+    RequestStudentForm event → mở StudentFormDialog
+      ↓
+    Nhập thông tin: Tên, MSSV, Ngành, Khóa, GPA
+      ↓
+    GPA thay đổi → Preview học lực realtime
+      ↓
+    Click "💾 Lưu"
+      ↓
+    Validate → Tạo Student object
+      ↓
+    SaveCompleted event → MainViewModel.AddNewStudent()
+      ↓
+    JsonDataService.AddStudent() → kiểm tra trùng MSSV
+      ↓
+    Lưu vào students.json → LoadStudents() → cập nhật DataGrid
+
+9.5. Luồng xóa sinh viên:
+    Admin chọn sinh viên trong bảng → click "🗑️ Xóa"
+      ↓
+    MessageBox xác nhận
+      ↓
+    "Yes" → JsonDataService.DeleteStudent()
+      ↓
+    Xóa khỏi list → SaveChanges() → LoadStudents()
+
+9.6. Luồng đăng xuất:
+    Click "🚪 Đăng xuất"
+      ↓
+    RequestLogout event
+      ↓
+    Tạo LoginWindow mới → đóng MainWindow
+
+================================================================================
+10. HƯỚNG DẪN SỬ DỤNG
+================================================================================
+
+10.1. Yêu cầu hệ thống:
+   - Windows 10/11
+   - .NET 8.0 Runtime trở lên
+
+10.2. Cách chạy:
+   - Mở terminal trong thư mục project
+   - Chạy lệnh: dotnet run
+   - Hoặc build: dotnet build → chạy file .exe trong bin/Debug/
+
+10.3. Tài khoản đăng nhập:
+   - Admin: username = admin, password = 123
+   - Sinh viên: username = MSSV (vd: SE180001), password = 1
+
+10.4. Thao tác Admin:
+   - Xem danh sách: Tự động hiển thị khi đăng nhập
+   - Tìm kiếm: Gõ vào ô tìm kiếm (tìm theo tên, MSSV, ngành, khóa)
+   - Thêm: Click nút "➕ Thêm" → điền form → Lưu
+   - Sửa: Chọn sinh viên → Click "✏️ Sửa" → sửa form → Lưu
+   - Xóa: Chọn sinh viên → Click "🗑️ Xóa" → Xác nhận
+   - Chi tiết: Click vào dòng sinh viên → panel bên phải hiển thị
+
+================================================================================
+11. AI HỖ TRỢ
+================================================================================
+
+Dự án có sử dụng AI (Antigravity - Google DeepMind) hỗ trợ viết code:
+- Tạo cấu trúc project và các file code
+- Thiết kế giao diện XAML
+- Viết logic xử lý
+- Debug và fix lỗi
+
+Tuy nhiên, sinh viên cần hiểu và giải thích được tất cả code trong dự án.
+
+================================================================================
+                        KẾT THÚC BÁO CÁO
+================================================================================

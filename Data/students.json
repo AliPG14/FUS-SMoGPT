@@ -1,0 +1,102 @@
+[
+  {
+    "name": "Nguyễn Văn An",
+    "mssv": "SE180001",
+    "nganhHoc": "Công nghệ thông tin",
+    "khoaHoc": "K18",
+    "gpa": 3.6,
+    "id": "SE180001",
+    "username": "SE180001",
+    "password": "1"
+  },
+  {
+    "name": "Trần Thị Bích",
+    "mssv": "SE180002",
+    "nganhHoc": "Công nghệ thông tin",
+    "khoaHoc": "K18",
+    "gpa": 3.2,
+    "id": "SE180002",
+    "username": "SE180002",
+    "password": "1"
+  },
+  {
+    "name": "Lê Hoàng Cường",
+    "mssv": "SE180003",
+    "nganhHoc": "Kỹ thuật phần mềm",
+    "khoaHoc": "K18",
+    "gpa": 2.8,
+    "id": "SE180003",
+    "username": "SE180003",
+    "password": "1"
+  },
+  {
+    "name": "Phạm Minh Đức",
+    "mssv": "SE180004",
+    "nganhHoc": "Kỹ thuật phần mềm",
+    "khoaHoc": "K18",
+    "gpa": 3.9,
+    "id": "SE180004",
+    "username": "SE180004",
+    "password": "1"
+  },
+  {
+    "name": "Hoàng Thị Em",
+    "mssv": "SE190005",
+    "nganhHoc": "Thiết kế đồ họa",
+    "khoaHoc": "K19",
+    "gpa": 2.3,
+    "id": "SE190005",
+    "username": "SE190005",
+    "password": "1"
+  },
+  {
+    "name": "Võ Quốc Phong",
+    "mssv": "SE190006",
+    "nganhHoc": "Quản trị kinh doanh",
+    "khoaHoc": "K19",
+    "gpa": 1.8,
+    "id": "SE190006",
+    "username": "SE190006",
+    "password": "1"
+  },
+  {
+    "name": "Đặng Thùy Giang",
+    "mssv": "SE190007",
+    "nganhHoc": "Công nghệ thông tin",
+    "khoaHoc": "K19",
+    "gpa": 4.0,
+    "id": "SE190007",
+    "username": "SE190007",
+    "password": "1"
+  },
+  {
+    "name": "Bùi Thanh Hải",
+    "mssv": "SE200008",
+    "nganhHoc": "Kỹ thuật phần mềm",
+    "khoaHoc": "K20",
+    "gpa": 0.8,
+    "id": "SE200008",
+    "username": "SE200008",
+    "password": "1"
+  },
+  {
+    "name": "Ngô Thị Inh",
+    "mssv": "SE200009",
+    "nganhHoc": "An toàn thông tin",
+    "khoaHoc": "K20",
+    "gpa": 2.5,
+    "id": "SE200009",
+    "username": "SE200009",
+    "password": "1"
+  },
+  {
+    "name": "Lý Minh Khoa",
+    "mssv": "SE200010",
+    "nganhHoc": "Trí tuệ nhân tạo",
+    "khoaHoc": "K20",
+    "gpa": 3.5,
+    "id": "SE200010",
+    "username": "SE200010",
+    "password": "1"
+  }
+]

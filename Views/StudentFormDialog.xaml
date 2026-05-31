@@ -1,0 +1,138 @@
+<Window x:Class="FUS_SMoGPT.Views.StudentFormDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding FormTitle}"
+        Width="500" Height="620"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Themes/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Border CornerRadius="16" Background="{StaticResource BgDarkBrush}"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect ShadowDepth="0" BlurRadius="25" Opacity="0.4" Color="#FF4E54C8"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0" Padding="24,18" Background="{StaticResource BgCardBrush}"
+                    CornerRadius="16,16,0,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                <Grid>
+                    <TextBlock Text="{Binding FormTitle}" 
+                               FontSize="20" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <Button Content="✕" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Width="32" Height="32" FontSize="14"
+                            Foreground="{StaticResource TextMutedBrush}"
+                            Cursor="Hand" Command="{Binding CancelCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="bg" Background="Transparent" CornerRadius="8"
+                                        Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bg" Property="Background" Value="#44FF4444"/>
+                                        <Setter Property="Foreground" Value="#FFFF4444"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Form Content -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="28,20,28,20">
+                <StackPanel>
+
+                    <!-- Họ và Tên -->
+                    <TextBlock Text="HỌ VÀ TÊN *" Style="{StaticResource LabelText}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}"
+                             Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,16"/>
+
+                    <!-- MSSV -->
+                    <TextBlock Text="MÃ SỐ SINH VIÊN *" Style="{StaticResource LabelText}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}"
+                             Text="{Binding Mssv, UpdateSourceTrigger=PropertyChanged}"
+                             IsReadOnly="{Binding IsEditMode}"
+                             Margin="0,0,0,16"/>
+
+                    <!-- Ngành Học -->
+                    <TextBlock Text="NGÀNH HỌC *" Style="{StaticResource LabelText}"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}"
+                              ItemsSource="{Binding DanhSachNganhHoc}"
+                              SelectedItem="{Binding SelectedNganhHoc}"
+                              IsEditable="True"
+                              Margin="0,0,0,16"/>
+
+                    <!-- Khóa Học -->
+                    <TextBlock Text="KHÓA HỌC *" Style="{StaticResource LabelText}"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}"
+                              ItemsSource="{Binding DanhSachKhoaHoc}"
+                              SelectedItem="{Binding SelectedKhoaHoc}"
+                              Margin="0,0,0,16"/>
+
+                    <!-- GPA -->
+                    <TextBlock Text="ĐIỂM GPA (0.0 - 4.0) *" Style="{StaticResource LabelText}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}"
+                             Text="{Binding GpaText, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,6"/>
+
+                    <!-- HocLuc Preview -->
+                    <TextBlock Text="{Binding HocLucPreview}"
+                               FontSize="13" FontWeight="SemiBold"
+                               Foreground="{StaticResource PrimaryLightBrush}"
+                               Margin="0,0,0,16"/>
+
+                    <!-- Error Message -->
+                    <Border Visibility="{Binding IsErrorVisible, Converter={StaticResource BoolToVisibility}}"
+                            Background="#33FF4444" CornerRadius="8" Padding="12,10"
+                            Margin="0,0,0,16">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   FontSize="12" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- Buttons -->
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" Content="❌ Hủy"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CancelCommand}"
+                                Padding="20,14"/>
+
+                        <Button Grid.Column="2" Content="💾 Lưu"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SaveCommand}"
+                                Padding="20,14"/>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</Window>
