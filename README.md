@@ -75,5 +75,5 @@ FUS-SMoGPT/
 
 ## Tác giả
 
-AliPG14 & buihuuphat245
+AliPG14 & buiphat245
 Tham khảo đồ án của sinh viên FPT
