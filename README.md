@@ -75,4 +75,5 @@ FUS-SMoGPT/
 
 ## Tác giả
 
-Đồ án môn học - FPT University
+AliPG14 & buihuuphat245
+Tham khảo đồ án của sinh viên FPT
